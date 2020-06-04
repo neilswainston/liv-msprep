@@ -18,8 +18,8 @@ metadata = {'apiLevel': '2.3',
 
 
 _REAGENT_PLATE_TYPE = 'agilent_1_reservoir_290ml'
-_SAMPLE_PLATE_TYPE = 'opentrons_24_aluminumblock_nest_1.5ml_screwcap'
-_DEST_PLATE_TYPE = '4titude_96_wellplate_200ul'
+_SAMPLE_PLATE_TYPE = 'opentrons_24_aluminumblock_nest_1.5ml_snapcap'
+_DEST_PLATE_TYPE = '4ti_96_wellplate_350ul'
 
 _SAMPLE_PLATE_LAST = 'A2'
 _NUM_REPS = 4
@@ -41,7 +41,7 @@ def run(protocol):
         if src_well == src_plt[_SAMPLE_PLATE_LAST]:
             break
 
-    protocol.pause('Put %s in vacuum drier.\n' % src_plt)
+    protocol.pause('Put %s in vacuum drier.\n' % int_plt)
 
     # Resuspend:
     for col in range(_get_num_cols()):
@@ -52,7 +52,7 @@ def run(protocol):
             mix_after=(3, 40))
 
     protocol.pause(
-        'Centrifuge %s (remove bubbles and any particulates).\n' % src_plt)
+        'Centrifuge %s (remove bubbles and any particulates).\n' % int_plt)
 
     # Pool:
     for dest_idx, dest_well in enumerate(dest_plt.wells()):
