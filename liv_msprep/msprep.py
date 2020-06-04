@@ -68,7 +68,7 @@ def run(protocol):
 def _setup(protocol):
     '''Setup.'''
     # Add temp deck:
-    temp_deck = protocol.load_module('tempdeck', 7)
+    temp_deck = protocol.load_module('tempdeck', 10)
     temp_deck.set_temperature(4)
 
     # Setup tip racks:
@@ -85,8 +85,8 @@ def _setup(protocol):
     # Add plates:
     reag_plt = protocol.load_labware(_REAGENT_PLATE_TYPE, 5, 'reagent')
     src_plt = temp_deck.load_labware(_SAMPLE_PLATE_TYPE, 'source')
-    int_plt = protocol.load_labware(_DEST_PLATE_TYPE, 8, 'intermidiate')
-    dest_plt = protocol.load_labware(_DEST_PLATE_TYPE, 6, 'destination')
+    int_plt = protocol.load_labware(_DEST_PLATE_TYPE, 6, 'intermidiate')
+    dest_plt = protocol.load_labware(_DEST_PLATE_TYPE, 8, 'destination')
 
     return p300_single, p300_multi, reag_plt, src_plt, int_plt, dest_plt
 
