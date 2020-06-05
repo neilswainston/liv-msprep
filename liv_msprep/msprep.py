@@ -19,50 +19,63 @@ metadata = {'apiLevel': '2.3',
 
 _REAGENT_PLATE_TYPE = 'agilent_1_reservoir_290ml'
 _SAMPLE_PLATE_TYPE = 'opentrons_24_aluminumblock_nest_1.5ml_snapcap'
-_DEST_PLATE_TYPE = '4ti_96_wellplate_350ul'
+_DEST_PLATE_TYPE = 'thermo_96_wellplate_450ul'
 
-_SAMPLE_PLATE_LAST = 'A2'
-_NUM_REPS = 4
+_SRC_PLATE_LAST = 'D6'
+_NUM_REPS = 3
 
 
 def run(protocol):
     '''Run protocol.'''
+
     # Setup:
-    p300_single, p300_multi, reag_plt, src_plt, int_plt, dest_plt = \
-        _setup(protocol)
+    p300_single, p300_multi, reag_plt, src_plt, dest_plt = _setup(protocol)
+    num_src = src_plt.wells().index(src_plt[_SRC_PLATE_LAST]) + 1
+    num_repl_wells = len(src_plt.wells()) * _NUM_REPS
+    pool_col_idx = num_repl_wells // len(dest_plt.rows())
 
     # Plate:
-    for src_idx, src_well in enumerate(src_plt.wells()):
+    for src_idx, src_well in enumerate(src_plt.wells()[:num_src]):
+        repl_idxs = range(src_idx,
+                          num_repl_wells,
+                          len(src_plt.wells()))
+
         p300_single.distribute(
             75,
             src_well,
-            int_plt.wells()[src_idx * _NUM_REPS:(src_idx + 1) * _NUM_REPS])
+            [dest_plt.wells()[idx] for idx in repl_idxs],
+            # air_gap=20,
+            disposal_volume=0,
+            trash=False)
 
-        if src_well == src_plt[_SAMPLE_PLATE_LAST]:
-            break
-
-    protocol.pause('Put %s in vacuum drier.\n' % int_plt)
+    protocol.pause('Put %s in vacuum drier.\n' % dest_plt)
 
     # Resuspend:
-    for col in range(_get_num_cols()):
+    for col_idx in range(_NUM_REPS):
+        repl_idxs = range(col_idx, pool_col_idx, _NUM_REPS)
+        repl_wells = [dest_plt.columns()[idx] for idx in repl_idxs]
+
         p300_multi.transfer(
             40,
             reag_plt['A1'],
-            int_plt.columns()[col],
-            mix_after=(3, 40))
+            repl_wells,
+            mix_after=(3, 40)
+        )
 
     protocol.pause(
-        'Centrifuge %s (remove bubbles and any particulates).\n' % int_plt)
+        'Centrifuge %s (remove bubbles and any particulates).\n' % dest_plt)
+
+    p300_single.reset_tipracks()
 
     # Pool:
-    for dest_idx, dest_well in enumerate(dest_plt.wells()):
-        p300_single.consolidate(
-            40,
-            int_plt.wells()[dest_idx * _NUM_REPS:(dest_idx + 1) * _NUM_REPS],
-            dest_well)
+    for col_idx in range(_NUM_REPS):
+        repl_idxs = range(col_idx, pool_col_idx, _NUM_REPS)
+        repl_wells = [dest_plt.columns()[idx] for idx in repl_idxs]
 
-        if dest_well == dest_plt[_SAMPLE_PLATE_LAST]:
-            break
+        p300_multi.consolidate(
+            40,
+            repl_wells,
+            dest_plt.columns()[pool_col_idx + col_idx])
 
 
 def _setup(protocol):
@@ -85,15 +98,9 @@ def _setup(protocol):
     # Add plates:
     reag_plt = protocol.load_labware(_REAGENT_PLATE_TYPE, 5, 'reagent')
     src_plt = temp_deck.load_labware(_SAMPLE_PLATE_TYPE, 'source')
-    int_plt = protocol.load_labware(_DEST_PLATE_TYPE, 6, 'intermidiate')
-    dest_plt = protocol.load_labware(_DEST_PLATE_TYPE, 8, 'destination')
+    dest_plt = protocol.load_labware(_DEST_PLATE_TYPE, 6, 'destination')
 
-    return p300_single, p300_multi, reag_plt, src_plt, int_plt, dest_plt
-
-
-def _get_num_cols():
-    '''Get number of sample columns.'''
-    return int(_SAMPLE_PLATE_LAST[1:])
+    return p300_single, p300_multi, reag_plt, src_plt, dest_plt
 
 
 def main():
