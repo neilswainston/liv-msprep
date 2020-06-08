@@ -19,7 +19,7 @@ metadata = {'apiLevel': '2.3',
 
 _REAGENT_PLATE_TYPE = 'agilent_1_reservoir_290ml'
 _SAMPLE_PLATE_TYPE = 'opentrons_24_aluminumblock_nest_2ml_snapcap'
-_DEST_PLATE_TYPE = '4titude_96_wellplate_350ul'
+_DEST_PLATE_TYPE = '4ti_96_wellplate_350ul'
 
 _SRC_PLATE_LAST = 'A2'
 _NUM_REPS = 3
@@ -127,7 +127,7 @@ def _mix(pipette, dest_plt, num_src, pool_col_idx):
         pipette.pick_up_tip()
 
         for well in repl_wells:
-            pipette.mix(3, 40, well)
+            pipette.mix(3, 40, well.bottom(0.5))
 
         pipette.return_tip()
 
