@@ -86,7 +86,7 @@ def _setup(protocol):
 
     # Setup tip racks:
     tip_racks_200 = \
-        [protocol.load_labware('opentrons_96_filtertiprack_200ul', 4)]
+        [protocol.load_labware('opentrons_96_filtertiprack_200ul', 11)]
 
     # Add pipette:
     p300_single = protocol.load_instrument(
@@ -96,9 +96,9 @@ def _setup(protocol):
         'p300_multi', 'right', tip_racks=tip_racks_200)
 
     # Add plates:
-    reag_plt = protocol.load_labware(_REAGENT_PLATE_TYPE, 5, 'reagent')
+    reag_plt = protocol.load_labware(_REAGENT_PLATE_TYPE, 9, 'reagent')
     src_plt = temp_deck.load_labware(_SAMPLE_PLATE_TYPE, 'source')
-    dest_plt = protocol.load_labware(_DEST_PLATE_TYPE, 6, 'destination')
+    dest_plt = protocol.load_labware(_DEST_PLATE_TYPE, 8, 'destination')
 
     return p300_single, p300_multi, reag_plt, src_plt, dest_plt
 
