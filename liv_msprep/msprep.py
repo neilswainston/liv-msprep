@@ -19,9 +19,9 @@ metadata = {'apiLevel': '2.3',
 
 _REAGENT_PLATE_TYPE = 'agilent_1_reservoir_290ml'
 _SAMPLE_PLATE_TYPE = 'opentrons_24_aluminumblock_nest_2ml_snapcap'
-_DEST_PLATE_TYPE = '4ti_96_wellplate_350ul'
+_DEST_PLATE_TYPE = 'thermo_96_wellplate_450ul'
 
-_SRC_PLATE_LAST = 'A2'
+_SRC_PLATE_LAST = 'B1'
 _NUM_REPS = 3
 
 
@@ -56,7 +56,7 @@ def run(protocol):
 
     # Pool:
     protocol.comment('\nPool')
-    _pool(p300_multi, dest_plt, num_src, pool_col_idx)
+    _pool(protocol, p300_multi, dest_plt, num_src, pool_col_idx)
 
 
 def _setup(protocol):
@@ -115,6 +115,9 @@ def _resuspend(pipette, reag_plt, dest_plt, num_src, pool_col_idx):
             new_tip='never'
         )
 
+        # Blow-out over last column:
+        pipette.blow_out(repl_wells[-1].top())
+
     pipette.drop_tip()
 
 
@@ -127,21 +130,58 @@ def _mix(pipette, dest_plt, num_src, pool_col_idx):
         pipette.pick_up_tip()
 
         for well in repl_wells:
-            pipette.mix(3, 40, well.bottom(0.5))
+            pipette.mix(5, 15, well.bottom(0.5))
 
         pipette.return_tip()
 
 
-def _pool(pipette, dest_plt, num_src, pool_col_idx):
+def _pool(protocol, pipette, dest_plt, num_src, pool_col_idx):
     '''Pool.'''
+    old_aspirate, old_dispense, _ = \
+        _set_flow_rate(protocol, pipette, aspirate=50, dispense=100)
+
     for col_idx in range(min(num_src // len(dest_plt.rows()) + 1, _NUM_REPS)):
         repl_idxs = range(col_idx, pool_col_idx, _NUM_REPS)
-        repl_wells = [dest_plt.columns()[idx] for idx in repl_idxs]
+        repl_wells = [dest_plt.columns()[idx]
+                      for idx in repl_idxs]
+
+        dest_well = dest_plt.columns()[pool_col_idx + col_idx]
 
         pipette.consolidate(
-            40,
+            35,
             repl_wells,
-            dest_plt.columns()[pool_col_idx + col_idx])
+            dest_well)
+
+        # Blow-out over last column:
+        pipette.blow_out(dest_well[0].top())
+
+    _set_flow_rate(protocol, pipette, aspirate=old_aspirate,
+                   dispense=old_dispense)
+
+
+def _set_flow_rate(protocol, pipette, aspirate=None, dispense=None,
+                   blow_out=None):
+    '''Set flow rates.'''
+    old_aspirate = pipette.flow_rate.aspirate
+    old_dispense = pipette.flow_rate.dispense
+    old_blow_out = pipette.flow_rate.blow_out
+
+    if aspirate and aspirate != old_aspirate:
+        protocol.comment('Updating aspirate from %i to %i'
+                         % (old_aspirate, aspirate))
+        pipette.flow_rate.aspirate = aspirate
+
+    if dispense and dispense != old_dispense:
+        protocol.comment('Updating dispense from %i to %i'
+                         % (old_dispense, dispense))
+        pipette.flow_rate.dispense = dispense
+
+    if blow_out and blow_out != old_blow_out:
+        protocol.comment('Updating blow_out from %i to %i'
+                         % (old_blow_out, blow_out))
+        pipette.flow_rate.blow_out = blow_out
+
+    return old_aspirate, old_dispense, old_blow_out
 
 
 def main():
